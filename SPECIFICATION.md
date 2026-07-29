@@ -20,13 +20,19 @@ sql-injection/
 ```
 apps/NN-name/
 ├── Dockerfile          ghcr.io/astral-sh/uv:python3.12-bookworm-slim, uv sync --locked
-├── pyproject.toml       【公開】flask, pymysql
-├── uv.lock              【公開】
-├── server.py            【公開】flag文字列は絶対に埋め込まない
-├── public/              【公開】vanilla HTML/CSS/fetch
-├── db/init.sql          【非公開・運営専用】schema+seed+flag実値
-└── README.md            【公開】問題文+段階ヒント+<details>解答(flag実値は書かない)
+├── pyproject.toml       flask, pymysql
+├── uv.lock
+├── server.py            flag文字列は絶対に埋め込まない
+├── public/               vanilla HTML/CSS/fetch
+├── db/
+│   ├── 01-schema.sql     schema+seed(flagは含まない)
+│   └── 02-flag.sh        環境変数FLAGを読んでflagsテーブルにINSERT
+└── README.md             問題文+段階ヒント+<details>解答(flag実値は書かない)
 ```
+
+flag実値はリポジトリ内のどこにも書かない。ルートの`.env`(gitignore済み)に
+`FLAG_01`〜`FLAG_05`として置き、`docker-compose.yml`が各`db-*`に`FLAG`環境変数として渡す。
+このためリポジトリのコード(上記全ファイル)は丸ごと公開してよい。詳細は[[INTENT]]参照。
 
 ## 01-auth-bypass
 
@@ -94,8 +100,9 @@ apps/NN-name/
 
 - `docker-compose.yml`は5組の`app-*`/`db-*`サービス。mysqlはhost port非公開、appコンテナからのみ
   到達可能(問題ごとに独立network)。
-- 各`db-*`: `image: mysql:8`、`volumes: apps/NN-name/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro`、
-  healthcheck (`mysqladmin ping`)。
+- 各`db-*`: `image: mysql:8`、`volumes: apps/NN-name/db:/docker-entrypoint-initdb.d:ro`
+  (ディレクトリごとマウント、`01-schema.sql`→`02-flag.sh`の順で実行)、
+  `environment.FLAG: ${FLAG_NN}`(`.env`から)、healthcheck (`mysqladmin ping`)。
 - 各`app-*`: `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`ベース、`uv sync --locked`で依存解決、
   `depends_on: db-*: condition: service_healthy` + server.py内で接続リトライ(DB起動待ちレース対策)。
 - host公開ポートはapp側のみ(3001〜3005)。
@@ -103,6 +110,7 @@ apps/NN-name/
 ## 起動・確認
 
 ```
+cp .env.example .env   # 初回のみ。FLAG_01〜FLAG_05を必要なら書き換える
 docker compose up --build
 curl -s localhost:3001/
 curl -s "localhost:3002/search?q=a"
