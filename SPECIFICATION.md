@@ -1,7 +1,7 @@
 # SPECIFICATION
 
 CTF初学者向けSQLインジェクション教材。Docker + Python/Flask + PyMySQL、依存管理は`uv`、
-ソース公開(白箱)、全5問。設計背景は[[INTENT]]参照。1問1技術、独立Flask+独立MySQL。
+ソース公開(白箱)、全6問。設計背景は[[INTENT]]参照。1問1技術、独立Flask+独立MySQL。
 
 ## 全体構成
 
@@ -12,8 +12,9 @@ sql-injection/
     ├── 01-auth-bypass/     (port 3001) 認証バイパス(tautology)
     ├── 02-union-search/    (port 3002) UNION-based抽出
     ├── 03-error-based/     (port 3003) Error-based抽出
-    ├── 04-boolean-blind/   (port 3004) Boolean-blind
-    └── 05-time-blind/      (port 3005) Time-blind
+    ├── 04-filter-bypass/   (port 3004) 禁止語フィルタ回避(WAF風blacklist)
+    ├── 05-multi-param/     (port 3005) 複数パラメータ注入(context切替)
+    └── 06-boolean-blind/   (port 3006) Boolean-blind
 ```
 
 各app構成:
@@ -31,7 +32,7 @@ apps/NN-name/
 ```
 
 flag実値はリポジトリ内のどこにも書かない。ルートの`.env`(gitignore済み)に
-`FLAG_01`〜`FLAG_05`として置き、`docker-compose.yml`が各`db-*`に`FLAG`環境変数として渡す。
+`FLAG_01`〜`FLAG_06`として置き、`docker-compose.yml`が各`db-*`に`FLAG`環境変数として渡す。
 このためリポジトリのコード(上記全ファイル)は丸ごと公開してよい。詳細は[[INTENT]]参照。
 
 ## 01-auth-bypass
@@ -75,7 +76,40 @@ flag実値はリポジトリ内のどこにも書かない。ルートの`.env`(
   `extractvalue`は結果を約32文字(マーカー含む)で切り詰めるため、`SUBSTRING(flag,1,31)`と
   `SUBSTRING(flag,32,31)`のように2回に分けて抽出する必要がある(実機検証済み)。
 
-## 04-boolean-blind
+## 04-filter-bypass
+
+- `products(id,name,description,price)` + `flags(id,flag)`。02と同じスキーマ・脆弱クエリ:
+  ```python
+  f"SELECT id, name, description, price FROM products WHERE name LIKE '%{q}%'"
+  ```
+- `/search`にWAFを模した禁止語チェックを追加。`BLOCKED = ["UNION", "SELECT", "--", " "]`を
+  `in`演算子(大文字小文字を区別する完全一致)で検査し、含まれれば`{"error": "forbidden
+  pattern detected"}`(400)を返す。チェックの甘さ(ケース区別、コメント記法1種類のみ)が
+  この問題の核。
+- 攻略: キーワードを大文字小文字混在にし(`UnIoN`/`SeLeCt`)、空白の代わりに`/**/`、
+  コメントは`--`ではなく`#`を使う:
+  ```
+  q=zzz'/**/uNioN/**/sElEcT/**/id,flag,NULL,NULL/**/fRoM/**/flags#
+  ```
+
+## 05-multi-param
+
+- `products(id,name,description,price)` + `flags(id,flag)`(categoryカラムなし)。
+- `GET /search?field=&q=` → `field`は`{"name","description","price"}`のホワイトリスト。
+  分岐する脆弱クエリ:
+  ```python
+  if field == "price":
+      f"SELECT id, name, description FROM products WHERE price = {q}"   # numeric context, クォートなし
+  else:
+      q_escaped = q.replace("'", "''")
+      f"SELECT id, name, description FROM products WHERE {field} LIKE '%{q_escaped}%'"
+  ```
+- `field=name`/`description`単体では`q`はクォートエスケープ済みで安全。`field=price`に
+  切り替えたときだけ`q`が未エスケープのnumeric contextに渡る — `field`と`q`の両方を
+  正しく組み合わせないと成立しない、という「複数パラメータの合成で初めて崩れる」設計。
+- 攻略: `field=price&q=0 UNION SELECT id,flag,NULL FROM flags-- -`。
+
+## 06-boolean-blind
 
 - `users(id, username, is_admin)` + `flags(id, flag)`。
 - `GET /api/user?id=` → 脆弱クエリ(numeric context、クォートなし):
@@ -86,41 +120,28 @@ flag実値はリポジトリ内のどこにも書かない。ルートの`.env`(
 - 攻略: `id=1 AND (SELECT SUBSTRING(flag,1,1) FROM flags)='F'`のような二値応答を1文字ずつ繰り返し
   flagを復元。
 
-## 05-time-blind
-
-- `subscribers(id, email)`(1行のみ)+ `flags(id, flag)`。行数を1に絞っているのは、
-  `SLEEP()`を含む条件はMySQLが行ごとに評価するため複数行あると遅延が行数倍に積み重なり
-  (実機確認済み、`LIMIT`を足しても解消しない)、学習時に混乱するため。
-- `POST /api/subscribe` (body: `email`) → 脆弱クエリ(string context):
-  ```python
-  f"SELECT id FROM subscribers WHERE email = '{email}'"
-  ```
-- レスポンスは真偽に関わらず常に同一(`{status:"ok"}`)。差が出るのは応答時間のみ。
-- 攻略: まず`email=x' OR SLEEP(3)-- `で遅延を確認しinjection成立を検証、その後
-  `email=x' OR IF((SELECT SUBSTRING(flag,1,1) FROM flags)='F', SLEEP(3), 0)-- `を
-  1文字ずつ試し応答時間でtrue/falseを判定してflagを復元。
-
 ## Docker
 
-- `docker-compose.yml`は5組の`app-*`/`db-*`サービス。mysqlはhost port非公開、appコンテナからのみ
+- `docker-compose.yml`は6組の`app-*`/`db-*`サービス。mysqlはhost port非公開、appコンテナからのみ
   到達可能(問題ごとに独立network)。
 - 各`db-*`: `image: mysql:8`、`volumes: apps/NN-name/db:/docker-entrypoint-initdb.d:ro`
   (ディレクトリごとマウント、`01-schema.sql`→`02-flag.sh`の順で実行)、
   `environment.FLAG: ${FLAG_NN}`(`.env`から)、healthcheck (`mysqladmin ping`)。
 - 各`app-*`: `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`ベース、`uv sync --locked`で依存解決、
   `depends_on: db-*: condition: service_healthy` + server.py内で接続リトライ(DB起動待ちレース対策)。
-- host公開ポートはapp側のみ(3001〜3005)。
+- host公開ポートはapp側のみ(3001〜3006)。
 
 ## 起動・確認
 
 ```
-cp .env.example .env   # 初回のみ。FLAG_01〜FLAG_05を必要なら書き換える
+cp .env.example .env   # 初回のみ。FLAG_01〜FLAG_06を必要なら書き換える
 docker compose up --build
 curl -s localhost:3001/
 curl -s "localhost:3002/search?q=a"
 curl -s "localhost:3003/product?id=1"
-curl -s "localhost:3004/api/user?id=1"
-curl -s -X POST -d "email=a@b.com" localhost:3005/api/subscribe
+curl -s "localhost:3004/search?q=a"
+curl -s "localhost:3005/search?field=name&q=a"
+curl -s "localhost:3006/api/user?id=1"
 ```
 
 各問正規動作(injection抜き)が壊れていないこと。全問で実際にpayloadを送りflagが取得できること。

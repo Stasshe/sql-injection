@@ -33,7 +33,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ctf-05-time-blind"
+name = "ctf-05-multi-param"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

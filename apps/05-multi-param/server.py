@@ -8,7 +8,7 @@ PORT = int(os.environ.get("PORT", 3000))
 DB_HOST = os.environ.get("DB_HOST", "db")
 DB_USER = os.environ.get("DB_USER", "root")
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "rootpassword")
-DB_NAME = os.environ.get("DB_NAME", "ctf04")
+DB_NAME = os.environ.get("DB_NAME", "ctf05")
 
 app = Flask(__name__, static_folder="public", static_url_path="")
 
@@ -42,27 +42,36 @@ def index():
     return send_from_directory(app.static_folder, "index.html")
 
 
-# 脆弱: idは常に数値だと思い込み、クォートもint()等のバリデーションも
-# 一切していない。レスポンスは行がヒットしたかどうかしか返さない(データは
-# 一切echoしない)ため、blindでの攻略が必要になる。
-@app.get("/api/user")
-def api_user():
-    id_ = request.args.get("id")
-    if id_ is None:
-        return jsonify({"error": "id is required"}), 400
+ALLOWED_FIELDS = {"name", "description", "price"}
 
-    query = f"SELECT username FROM users WHERE id = {id_}"
+
+# 脆弱: fieldとqの2パラメータが揃って初めて注入が成立する。文字列カラム
+# (name/description)向けの分岐はクォートをエスケープしており単体では安全。
+# だがfield=priceを選ぶと数値カラム用の分岐に入り、そちらはクォート不要な
+# numeric contextとしてqをそのまま埋め込む — fieldとqを組み合わせないと
+# 崩れないWHERE句になっている。
+@app.get("/search")
+def search():
+    field = request.args.get("field", "name")
+    q = request.args.get("q", "")
+
+    if field not in ALLOWED_FIELDS:
+        return jsonify({"error": "invalid field"}), 400
+
+    if field == "price":
+        query = f"SELECT id, name, description FROM products WHERE price = {q}"
+    else:
+        q_escaped = q.replace("'", "''")
+        query = f"SELECT id, name, description FROM products WHERE {field} LIKE '%{q_escaped}%'"
 
     try:
         with db.cursor() as cur:
             cur.execute(query)
             rows = cur.fetchall()
-    except pymysql.err.MySQLError:
-        # 03とは違い、ここではクエリの詳細を一切漏らさず汎用エラーのみ返す。
-        # 完全にblindな攻略を意図している。
-        return jsonify({"found": False}), 400
+    except pymysql.err.MySQLError as e:
+        return jsonify({"error": str(e)}), 500
 
-    return jsonify({"found": len(rows) > 0})
+    return jsonify({"results": rows})
 
 
 if __name__ == "__main__":

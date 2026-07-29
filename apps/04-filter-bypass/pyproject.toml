@@ -1,5 +1,5 @@
 [project]
-name = "ctf-04-boolean-blind"
+name = "ctf-04-filter-bypass"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"

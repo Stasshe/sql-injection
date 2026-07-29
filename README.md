@@ -1,6 +1,6 @@
 # SQL Injection CTF
 
-SQLインジェクション入門〜中級序盤の教材。全5問、Docker + Python/Flask。ソースコードは全部公開(白箱)。
+SQLインジェクション入門〜中級序盤の教材。全6問、Docker + Python/Flask。ソースコードは全部公開(白箱)。
 各問のヒント・解答は`apps/NN-*/README.md`にある。設計背景は[INTENT.md](./INTENT.md)、
 詳細仕様は[SPECIFICATION.md](./SPECIFICATION.md)。
 
@@ -10,7 +10,7 @@ SQLインジェクション入門〜中級序盤の教材。全5問、Docker + P
 ## 起動
 
 ```
-cp .env.example .env   # 初回のみ。中身のFLAG_01〜FLAG_05は自由に書き換えてよい
+cp .env.example .env   # 初回のみ。中身のFLAG_01〜FLAG_06は自由に書き換えてよい
 docker compose up --build
 ```
 
@@ -24,8 +24,9 @@ docker compose up --build
 | 01 | http://localhost:3001 | 認証バイパス(tautology) | 入門 |
 | 02 | http://localhost:3002 | UNION-based抽出 | 基礎 |
 | 03 | http://localhost:3003 | Error-based抽出 | 基礎〜中級序盤 |
-| 04 | http://localhost:3004 | Boolean-blind | 中級序盤 |
-| 05 | http://localhost:3005 | Time-blind | 中級序盤 |
+| 04 | http://localhost:3004 | 禁止語フィルタ回避(WAF風blacklist) | 基礎〜中級序盤 |
+| 05 | http://localhost:3005 | 複数パラメータ注入(context切替) | 中級序盤 |
+| 06 | http://localhost:3006 | Boolean-blind | 中級 |
 
 ## 進め方
 

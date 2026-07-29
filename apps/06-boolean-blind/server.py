@@ -8,7 +8,7 @@ PORT = int(os.environ.get("PORT", 3000))
 DB_HOST = os.environ.get("DB_HOST", "db")
 DB_USER = os.environ.get("DB_USER", "root")
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "rootpassword")
-DB_NAME = os.environ.get("DB_NAME", "ctf05")
+DB_NAME = os.environ.get("DB_NAME", "ctf06")
 
 app = Flask(__name__, static_folder="public", static_url_path="")
 
@@ -42,23 +42,27 @@ def index():
     return send_from_directory(app.static_folder, "index.html")
 
 
-# 脆弱: emailをバインドパラメータではなく文字列連結している。レスポンスは
-# 真偽に関わらず常に同一で、booleanの手がかりすら与えない。応答時間の差だけが
-# injectionを検知・悪用する唯一の手段になる(time-based blind)。
-@app.post("/api/subscribe")
-def subscribe():
-    email = request.form.get("email", "")
+# 脆弱: idは常に数値だと思い込み、クォートもint()等のバリデーションも
+# 一切していない。レスポンスは行がヒットしたかどうかしか返さない(データは
+# 一切echoしない)ため、blindでの攻略が必要になる。
+@app.get("/api/user")
+def api_user():
+    id_ = request.args.get("id")
+    if id_ is None:
+        return jsonify({"error": "id is required"}), 400
 
-    query = f"SELECT id FROM subscribers WHERE email = '{email}'"
+    query = f"SELECT username FROM users WHERE id = {id_}"
 
     try:
         with db.cursor() as cur:
             cur.execute(query)
-            cur.fetchall()
+            rows = cur.fetchall()
     except pymysql.err.MySQLError:
-        pass
+        # 03とは違い、ここではクエリの詳細を一切漏らさず汎用エラーのみ返す。
+        # 完全にblindな攻略を意図している。
+        return jsonify({"found": False}), 400
 
-    return jsonify({"status": "ok"})
+    return jsonify({"found": len(rows) > 0})
 
 
 if __name__ == "__main__":

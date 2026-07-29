@@ -1,5 +1,5 @@
 [project]
-name = "ctf-05-time-blind"
+name = "ctf-06-boolean-blind"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
