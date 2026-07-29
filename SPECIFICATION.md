@@ -1,7 +1,7 @@
 # SPECIFICATION
 
-CTF初学者向けSQLインジェクション教材。Docker + Node.js/Express、白箱(ソース公開)、全3問。
-設計背景は[[INTENT]]参照。
+CTF初学者向けSQLインジェクション教材。Docker + Python/Flask + PyMySQL、依存管理は`uv`、
+ソース公開(白箱)、全5問。設計背景は[[INTENT]]参照。1問1技術、独立Flask+独立MySQL。
 
 ## 全体構成
 
@@ -9,79 +9,106 @@ CTF初学者向けSQLインジェクション教材。Docker + Node.js/Express�
 sql-injection/
 ├── docker-compose.yml
 └── apps/
-    ├── 01-login-bypass/    (port 3001)
-    ├── 02-product-search/  (port 3002)
-    └── 03-blind-numeric/   (port 3003)
+    ├── 01-auth-bypass/     (port 3001) 認証バイパス(tautology)
+    ├── 02-union-search/    (port 3002) UNION-based抽出
+    ├── 03-error-based/     (port 3003) Error-based抽出
+    ├── 04-boolean-blind/   (port 3004) Boolean-blind
+    └── 05-time-blind/      (port 3005) Time-blind
 ```
 
-各app = 独立Express + 独立MySQL。mysqlはhost port非公開、appコンテナからのみ到達。
 各app構成:
 ```
 apps/NN-name/
-├── Dockerfile        node:20-alpine, npm ci --omit=dev, CMD node server.js
-├── package.json      express, mysql2 (+01のみbcryptjs)
-├── server.js
-├── public/           vanilla HTML/CSS/fetch、ビルドステップなし
-├── db/init.sql       mysql起動時に自動実行、schema+seed+flag
-└── README.md         問題概要+段階ヒント+<details>解答
+├── Dockerfile          ghcr.io/astral-sh/uv:python3.12-bookworm-slim, uv sync --locked
+├── pyproject.toml       【公開】flask, pymysql
+├── uv.lock              【公開】
+├── server.py            【公開】flag文字列は絶対に埋め込まない
+├── public/              【公開】vanilla HTML/CSS/fetch
+├── db/init.sql          【非公開・運営専用】schema+seed+flag実値
+└── README.md            【公開】問題文+段階ヒント+<details>解答(flag実値は書かない)
 ```
 
-## 01-login-bypass
+## 01-auth-bypass
 
-- `users(id, username, password, is_admin)`。passwordは平文保存(レガシー社内ツールの体で意図的に採用)。
+- `users(id, username, password, is_admin)` + `flags(id, flag)`(1行のみ)。
 - ログインクエリ(脆弱):
-  ```js
-  `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`
+  ```python
+  f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
   ```
-  両フィールドとも生入力、SQL文字列結合。
-- 攻略: `username`に`admin' -- ` を入れるとpassword比較がコメントアウトされWHERE成立、
-  もしくは`' OR '1'='1' -- `でも任意行にマッチしログイン成立。
-- 成功条件: マッチした行の`is_admin`が真ならadmin扱い → `/dashboard`でflag表示。
-- flag: DB内に持たず、admin判定後のダッシュボードHTML内に直書き。
+- 攻略: `username=admin' -- ` または `' OR '1'='1' -- ` でWHERE句を無効化しログイン成立。
+- 成功後`is_admin`が真なら`SELECT flag FROM flags LIMIT 1`(injectionではなく通常クエリ)でflag取得
+  し画面表示。
 
-## 02-product-search
+## 02-union-search
 
-- `products(id, name, description, price, category)` + 無関係`secrets(id, flag)`。
+- `products(id,name,description,price)` + `flags(id,flag)`。**テーブル/カラム名は問題文に明記**
+  (この問題の主眼はUNION機構の理解であり、スキーマ探索ではない)。
 - `GET /search?q=` → 脆弱クエリ:
-  ```js
-  `SELECT id,name,description,price FROM products WHERE name LIKE '%${q}%'`
+  ```python
+  f"SELECT id, name, description, price FROM products WHERE name LIKE '%{q}%'"
   ```
-- エラーはそのまま`{error: err.message}`でクライアントへ返す(verboseエラー設定)。
-- 攻略手順: `ORDER BY`でカラム数特定 → `UNION SELECT`成立確認 →
-  `information_schema.tables`/`columns`で`secrets`テーブルとカラム名を発見(UIに一切出てこない)→
-  `UNION SELECT id,flag,NULL,NULL FROM secrets`で抽出。
-- flag: `secrets.flag`カラムに格納。
+- エラーをそのまま`{error: str(e)}`で返す(verbose)。
+- 攻略: `ORDER BY`でSELECT対象カラム数(4)を特定 → `UNION SELECT id,flag,NULL,NULL FROM flags`で抽出。
 
-## 03-blind-numeric
+## 03-error-based
 
-- `users(id, username, is_admin)` + `secrets(id, flag)`。
+- `products(id,name,description,price)` + `flags(id,flag)`。
+- `GET /product?id=` → 脆弱クエリ(numeric context、クォートなし):
+  ```python
+  f"SELECT name, description, price FROM products WHERE id = {id_}"
+  ```
+- エラーはそのまま返す(この問題の核が「エラーメッセージにデータを埋め込ませる」ため必須)。
+- 攻略: `extractvalue()`によるXPATH構文エラーを利用しflagをエラーメッセージに出力させる。
+  ```
+  id=1 AND extractvalue(1, concat(0x7e, (SELECT flag FROM flags)))
+  ```
+  `extractvalue`は結果を約32文字(マーカー含む)で切り詰めるため、`SUBSTRING(flag,1,31)`と
+  `SUBSTRING(flag,32,31)`のように2回に分けて抽出する必要がある(実機検証済み)。
+
+## 04-boolean-blind
+
+- `users(id, username, is_admin)` + `flags(id, flag)`。
 - `GET /api/user?id=` → 脆弱クエリ(numeric context、クォートなし):
-  ```js
-  `SELECT username FROM users WHERE id = ${id}`
+  ```python
+  f"SELECT username FROM users WHERE id = {id_}"
   ```
-- レスポンスは`{found: true}` / `{found: false}`のみ。データは一切echoしない(真の意味でblind)。
-- idはバリデーションなしでそのまま埋め込み → boolean-blind / UNION-blind両方成立。
-- 攻略: `id=1 AND (SELECT SUBSTRING(flag,1,1) FROM secrets)='F'`のような二値応答で1文字ずつ抽出、
-  または`id=-1 UNION SELECT 1 FROM secrets WHERE flag LIKE 'FLAG%'`系で存在確認を繰り返す。
-  sqlmap `--technique=B` でも解ける難易度。
-- flag: `secrets.flag`カラムに格納。
+- レスポンスは`{found: true}` / `{found: false}`のみ。データは一切echoしない。
+- 攻略: `id=1 AND (SELECT SUBSTRING(flag,1,1) FROM flags)='F'`のような二値応答を1文字ずつ繰り返し
+  flagを復元。
+
+## 05-time-blind
+
+- `subscribers(id, email)`(1行のみ)+ `flags(id, flag)`。行数を1に絞っているのは、
+  `SLEEP()`を含む条件はMySQLが行ごとに評価するため複数行あると遅延が行数倍に積み重なり
+  (実機確認済み、`LIMIT`を足しても解消しない)、学習時に混乱するため。
+- `POST /api/subscribe` (body: `email`) → 脆弱クエリ(string context):
+  ```python
+  f"SELECT id FROM subscribers WHERE email = '{email}'"
+  ```
+- レスポンスは真偽に関わらず常に同一(`{status:"ok"}`)。差が出るのは応答時間のみ。
+- 攻略: まず`email=x' OR SLEEP(3)-- `で遅延を確認しinjection成立を検証、その後
+  `email=x' OR IF((SELECT SUBSTRING(flag,1,1) FROM flags)='F', SLEEP(3), 0)-- `を
+  1文字ずつ試し応答時間でtrue/falseを判定してflagを復元。
 
 ## Docker
 
-- `docker-compose.yml`直下に3組の`app-*`/`db-*`サービス定義。
+- `docker-compose.yml`は5組の`app-*`/`db-*`サービス。mysqlはhost port非公開、appコンテナからのみ
+  到達可能(問題ごとに独立network)。
 - 各`db-*`: `image: mysql:8`、`volumes: apps/NN-name/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro`、
   healthcheck (`mysqladmin ping`)。
-- 各`app-*`: `depends_on: db-*: condition: service_healthy` + server.js内でも接続リトライ
-  (`connectWithRetry`、DB起動待ちレース対策)。
-- host公開ポートはapp側のみ(3001/3002/3003)。dbは内部networkのみ。
+- 各`app-*`: `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`ベース、`uv sync --locked`で依存解決、
+  `depends_on: db-*: condition: service_healthy` + server.py内で接続リトライ(DB起動待ちレース対策)。
+- host公開ポートはapp側のみ(3001〜3005)。
 
 ## 起動・確認
 
 ```
 docker compose up --build
-curl -s localhost:3001/         # 01 ログインフォーム
-curl -s localhost:3002/search?q=a
-curl -s localhost:3003/api/user?id=1
+curl -s localhost:3001/
+curl -s "localhost:3002/search?q=a"
+curl -s "localhost:3003/product?id=1"
+curl -s "localhost:3004/api/user?id=1"
+curl -s -X POST -d "email=a@b.com" localhost:3005/api/subscribe
 ```
 
-各問正規動作(injection抜き)も壊れていないこと。flagは各問攻略で取得できること。
+各問正規動作(injection抜き)が壊れていないこと。全問で実際にpayloadを送りflagが取得できること。

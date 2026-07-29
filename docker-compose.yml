@@ -4,7 +4,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
     volumes:
-      - ./apps/01-login-bypass/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/01-auth-bypass/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -13,7 +13,7 @@ services:
     networks: [net-01]
 
   app-01:
-    build: ./apps/01-login-bypass
+    build: ./apps/01-auth-bypass
     environment:
       DB_HOST: db-01
       DB_USER: root
@@ -31,7 +31,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
     volumes:
-      - ./apps/02-product-search/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/02-union-search/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -40,7 +40,7 @@ services:
     networks: [net-02]
 
   app-02:
-    build: ./apps/02-product-search
+    build: ./apps/02-union-search
     environment:
       DB_HOST: db-02
       DB_USER: root
@@ -58,7 +58,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
     volumes:
-      - ./apps/03-blind-numeric/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/03-error-based/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -67,7 +67,7 @@ services:
     networks: [net-03]
 
   app-03:
-    build: ./apps/03-blind-numeric
+    build: ./apps/03-error-based
     environment:
       DB_HOST: db-03
       DB_USER: root
@@ -80,7 +80,63 @@ services:
         condition: service_healthy
     networks: [net-03]
 
+  db-04:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./apps/04-boolean-blind/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [net-04]
+
+  app-04:
+    build: ./apps/04-boolean-blind
+    environment:
+      DB_HOST: db-04
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: ctf04
+    ports:
+      - "3004:3000"
+    depends_on:
+      db-04:
+        condition: service_healthy
+    networks: [net-04]
+
+  db-05:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./apps/05-time-blind/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [net-05]
+
+  app-05:
+    build: ./apps/05-time-blind
+    environment:
+      DB_HOST: db-05
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: ctf05
+    ports:
+      - "3005:3000"
+    depends_on:
+      db-05:
+        condition: service_healthy
+    networks: [net-05]
+
 networks:
   net-01:
   net-02:
   net-03:
+  net-04:
+  net-05:

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>03 - Error-based</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 500px; margin: 60px auto; color: #222; }
+  input { padding: 8px; width: 250px; }
+  button { padding: 8px 16px; }
+  pre { background: #f5f5f5; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <h1>商品詳細</h1>
+  <input id="id" type="text" placeholder="商品ID" />
+  <button id="go">表示</button>
+  <pre id="output"></pre>
+
+  <script>
+    async function load() {
+      const id = document.getElementById('id').value;
+      const resp = await fetch('/product?id=' + encodeURIComponent(id));
+      const data = await resp.json();
+      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    }
+    document.getElementById('go').addEventListener('click', load);
+    document.getElementById('id').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+  </script>
+</body>
+</html>

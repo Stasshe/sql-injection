@@ -1,8 +1,12 @@
 # SQL Injection CTF
 
-SQLインジェクション入門教材。全3問、Docker + Node.js/Express。ソースコードは全部公開(白箱)。
+SQLインジェクション入門〜中級序盤の教材。全5問、Docker + Python/Flask。ソースコードは全部公開(白箱)。
 各問のヒント・解答は`apps/NN-*/README.md`にある。設計背景は[INTENT.md](./INTENT.md)、
 詳細仕様は[SPECIFICATION.md](./SPECIFICATION.md)。
+
+**配布時の注意**: 参加者に渡すのは各`apps/NN-*/server.py`, `public/`, `README.md`まで。
+`db/init.sql`には実際のflag文字列とschemaが入っているため運営専用、参加者には渡さないこと。
+詳細は[INTENT.md](./INTENT.md)。
 
 ## 起動
 
@@ -15,16 +19,18 @@ docker compose up --build
 
 ## 問題一覧
 
-| # | URL | 概要 | 難易度 |
+| # | URL | 技術 | 難易度 |
 |---|-----|------|--------|
-| 01 | http://localhost:3001 | ログインフォームを突破してadminになれ | 基礎 |
-| 02 | http://localhost:3002 | 商品検索からDB内のflagを抜き出せ(UNION) | 中級手前 |
-| 03 | http://localhost:3003 | 応答は真偽値のみ。blindでflagを抜き出せ | 中級 |
+| 01 | http://localhost:3001 | 認証バイパス(tautology) | 入門 |
+| 02 | http://localhost:3002 | UNION-based抽出 | 基礎 |
+| 03 | http://localhost:3003 | Error-based抽出 | 基礎〜中級序盤 |
+| 04 | http://localhost:3004 | Boolean-blind | 中級序盤 |
+| 05 | http://localhost:3005 | Time-blind | 中級序盤 |
 
 ## 進め方
 
 1. まず各アプリを実際に触って正規の使い方を確認する。
-2. `apps/NN-*/server.js`のソースを読み、クエリがどう組み立てられているか確認する。
+2. `apps/NN-*/server.py`のソースを読み、クエリがどう組み立てられているか確認する。
 3. 詰まったら該当READMEのヒントを1段階ずつ開く。
 
 ## 停止・後片付け
