@@ -60,6 +60,12 @@ def product():
     except pymysql.err.MySQLError as e:
         return jsonify({"error": str(e)}), 500
 
+    # idが素の数字のときだけ実際の行を表示する。injection文字列は数字だけには
+    # ならないので、UNIONで偽の行を混ぜても表示には反映されない
+    # (クエリ自体はバリデーションなしで実行されるのでerror-based技術は変わらず刺さる)。
+    if not id_.isdigit():
+        return jsonify({"result": None})
+
     return jsonify({"result": row})
 
 

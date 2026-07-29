@@ -65,6 +65,9 @@ flag実値はリポジトリ内のどこにも書かない。ルートの`.env`(
   f"SELECT name, description, price FROM products WHERE id = {id_}"
   ```
 - エラーはそのまま返す(この問題の核が「エラーメッセージにデータを埋め込ませる」ため必須)。
+- クエリ自体はバリデーションなしでそのまま実行するが、**表示は`id_.isdigit()`が真の時だけ**
+  行う。これによりUNION SELECTで行を混ぜても表示には反映されず(素の数字以外は`result: null`)、
+  抽出手段がerror-based一本に絞られる(実際にUNIONで解けてしまうことが判明したため追加)。
 - 攻略: `extractvalue()`によるXPATH構文エラーを利用しflagをエラーメッセージに出力させる。
   ```
   id=1 AND extractvalue(1, concat(0x7e, (SELECT flag FROM flags)))
