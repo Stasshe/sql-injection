@@ -3,8 +3,9 @@ services:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
+      FLAG: ${FLAG_01}
     volumes:
-      - ./apps/01-auth-bypass/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/01-auth-bypass/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -30,8 +31,9 @@ services:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
+      FLAG: ${FLAG_02}
     volumes:
-      - ./apps/02-union-search/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/02-union-search/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -57,8 +59,9 @@ services:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
+      FLAG: ${FLAG_03}
     volumes:
-      - ./apps/03-error-based/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/03-error-based/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -84,8 +87,9 @@ services:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
+      FLAG: ${FLAG_04}
     volumes:
-      - ./apps/04-boolean-blind/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/04-boolean-blind/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -111,8 +115,9 @@ services:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
+      FLAG: ${FLAG_05}
     volumes:
-      - ./apps/05-time-blind/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./apps/05-time-blind/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s

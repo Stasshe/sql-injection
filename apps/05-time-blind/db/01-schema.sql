@@ -14,5 +14,3 @@ CREATE TABLE flags (
   id INT AUTO_INCREMENT PRIMARY KEY,
   flag VARCHAR(100) NOT NULL
 );
-
-INSERT INTO flags (flag) VALUES ('FLAG{time_based_blind_sleep_injection}');

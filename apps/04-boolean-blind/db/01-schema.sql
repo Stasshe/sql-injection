@@ -16,5 +16,3 @@ CREATE TABLE flags (
   id INT AUTO_INCREMENT PRIMARY KEY,
   flag VARCHAR(100) NOT NULL
 );
-
-INSERT INTO flags (flag) VALUES ('FLAG{boolean_blind_binary_search}');
