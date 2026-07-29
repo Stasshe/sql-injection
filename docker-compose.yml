@@ -1,0 +1,86 @@
+services:
+  db-01:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./apps/01-login-bypass/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [net-01]
+
+  app-01:
+    build: ./apps/01-login-bypass
+    environment:
+      DB_HOST: db-01
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: ctf01
+    ports:
+      - "3001:3000"
+    depends_on:
+      db-01:
+        condition: service_healthy
+    networks: [net-01]
+
+  db-02:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./apps/02-product-search/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [net-02]
+
+  app-02:
+    build: ./apps/02-product-search
+    environment:
+      DB_HOST: db-02
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: ctf02
+    ports:
+      - "3002:3000"
+    depends_on:
+      db-02:
+        condition: service_healthy
+    networks: [net-02]
+
+  db-03:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./apps/03-blind-numeric/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [net-03]
+
+  app-03:
+    build: ./apps/03-blind-numeric
+    environment:
+      DB_HOST: db-03
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: ctf03
+    ports:
+      - "3003:3000"
+    depends_on:
+      db-03:
+        condition: service_healthy
+    networks: [net-03]
+
+networks:
+  net-01:
+  net-02:
+  net-03:

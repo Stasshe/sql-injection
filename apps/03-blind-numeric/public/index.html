@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>03 - Blind Numeric</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 500px; margin: 60px auto; color: #222; }
+  input { padding: 8px; width: 250px; }
+  button { padding: 8px 16px; }
+  #result { margin-top: 20px; font-size: 1.2rem; }
+</style>
+</head>
+<body>
+  <h1>User Lookup</h1>
+  <p>Check whether a user id exists.</p>
+  <input id="id" type="text" placeholder="user id" />
+  <button id="go">Check</button>
+  <div id="result"></div>
+
+  <script>
+    async function check() {
+      const id = document.getElementById('id').value;
+      const resp = await fetch('/api/user?id=' + encodeURIComponent(id));
+      const data = await resp.json();
+      document.getElementById('result').textContent = data.found ? 'found: true' : 'found: false';
+    }
+    document.getElementById('go').addEventListener('click', check);
+    document.getElementById('id').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  </script>
+</body>
+</html>
