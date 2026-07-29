@@ -4,13 +4,13 @@ SQLインジェクション入門〜中級序盤の教材。全5問、Docker + P
 各問のヒント・解答は`apps/NN-*/README.md`にある。設計背景は[INTENT.md](./INTENT.md)、
 詳細仕様は[SPECIFICATION.md](./SPECIFICATION.md)。
 
-**配布時の注意**: 参加者に渡すのは各`apps/NN-*/server.py`, `public/`, `README.md`まで。
-`db/init.sql`には実際のflag文字列とschemaが入っているため運営専用、参加者には渡さないこと。
-詳細は[INTENT.md](./INTENT.md)。
+**配布時の注意**: flagの実値は`.env`にのみ置く(gitignore済み)。それ以外(`server.py`,
+`db/*.sql`, `db/*.sh`など)はリポジトリごと公開してよい。詳細は[INTENT.md](./INTENT.md)。
 
 ## 起動
 
 ```
+cp .env.example .env   # 初回のみ。中身のFLAG_01〜FLAG_05は自由に書き換えてよい
 docker compose up --build
 ```
 
