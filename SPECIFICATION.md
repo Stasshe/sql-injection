@@ -47,8 +47,9 @@ flag実値はリポジトリ内のどこにも書かない。ルートの`.env`(
 
 ## 02-union-search
 
-- `products(id,name,description,price)` + `flags(id,flag)`。**テーブル/カラム名は問題文に明記**
-  (この問題の主眼はUNION機構の理解であり、スキーマ探索ではない)。
+- `products(id,name,description,price)` + `flags(id,flag)`。**テーブル/カラム名・カラム数(4)とも
+  問題文に明記**(この問題の主眼はUNION機構の理解であり、スキーマ探索ではない。ORDER BYでの
+  カラム数探索は「もっと自力で探したい場合」の任意ルートとしてのみREADMEに残す)。
 - `GET /search?q=` → 脆弱クエリ:
   ```python
   f"SELECT id, name, description, price FROM products WHERE name LIKE '%{q}%'"
