@@ -7,7 +7,7 @@
 
 <details><summary>ヒント1</summary>
 
-`id`はクォートなしでそのまま数値コンテキストに埋め込まれている(`server.js`参照)。
+`id`はクォートなしでそのまま数値コンテキストに埋め込まれている(`server.py`参照)。
 エラーはそのままJSONで返る。
 
 </details>

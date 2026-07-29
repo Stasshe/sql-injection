@@ -9,7 +9,7 @@
 
 <details><summary>ヒント1</summary>
 
-`?q=`の値をそのままLIKE句に埋め込んでいる(`server.js`参照)。エラーはそのままJSONで返る
+`?q=`の値をそのままLIKE句に埋め込んでいる(`server.py`参照)。エラーはそのままJSONで返る
 = 構文ミスの手がかりが丸見え。
 
 </details>
