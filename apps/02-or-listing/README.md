@@ -1,6 +1,6 @@
-# 03 - OR Injection
+# 02 - OR Injection
 
-`http://localhost:3003`の商品詳細から、非公開の商品に隠されたflagを表示せよ。
+`http://localhost:3002`の商品詳細から、非公開の商品に隠されたflagを表示せよ。
 `server.py`は読んでよい。
 
 この問題のテーマは、クォートで囲まれていない数値条件へ`OR`を追加すること。

@@ -33,7 +33,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       FLAG: ${FLAG_02}
     volumes:
-      - ./apps/02-union-search/db:/docker-entrypoint-initdb.d:ro
+      - ./apps/02-or-listing/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -42,7 +42,7 @@ services:
     networks: [net-02]
 
   app-02:
-    build: ./apps/02-union-search
+    build: ./apps/02-or-listing
     environment:
       DB_HOST: db-02
       DB_USER: root
@@ -61,7 +61,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       FLAG: ${FLAG_03}
     volumes:
-      - ./apps/03-or-listing/db:/docker-entrypoint-initdb.d:ro
+      - ./apps/03-union-search/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -70,7 +70,7 @@ services:
     networks: [net-03]
 
   app-03:
-    build: ./apps/03-or-listing
+    build: ./apps/03-union-search
     environment:
       DB_HOST: db-03
       DB_USER: root

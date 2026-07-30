@@ -1,6 +1,6 @@
-# 02 - UNION-based Search
+# 03 - UNION-based Search
 
-`http://localhost:3002` の商品検索から、DB内のflagを抜き出せ。
+`http://localhost:3003` の商品検索から、DB内のflagを抜き出せ。
 `server.py`のソースコードは読んでよい。
 
 このDBのテーブル構成:

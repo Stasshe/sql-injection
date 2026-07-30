@@ -13,8 +13,7 @@ DB_NAME = os.environ.get("DB_NAME", "ctf02")
 app = Flask(__name__, static_folder="public", static_url_path="")
 
 
-# MySQLコンテナの起動完了より先にappが立ち上がるレースを避けるため、
-# 接続できるまでリトライする。
+# Retry because the app container may start before MySQL is ready.
 def connect_with_retry(retries=20, delay_sec=2):
     for attempt in range(1, retries + 1):
         try:
@@ -42,13 +41,14 @@ def index():
     return send_from_directory(app.static_folder, "index.html")
 
 
-# 脆弱: 検索語をバインドパラメータではなくLIKE句に直接連結している。
-# エラーもそのままクライアントに返す(verbose) → カラム数特定に利用できる。
-@app.get("/search")
-def search():
-    q = request.args.get("q", "")
+# Vulnerable: id is inserted directly into a numeric SQL context.
+@app.get("/product")
+def product():
+    id_ = request.args.get("id")
+    if id_ is None:
+        return jsonify({"error": "id is required"}), 400
 
-    query = f"SELECT id, name, description, price FROM products WHERE name LIKE '%{q}%'"
+    query = f"SELECT name, description, price FROM products WHERE id = {id_}"
 
     try:
         with db.cursor() as cur:

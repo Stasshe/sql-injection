@@ -11,8 +11,8 @@ sql-injection/
 ├── docker-compose.yml
 └── apps/
     ├── 01-auth-bypass/  (port 3001) 文字列条件の認証バイパス
-    ├── 02-union-search/ (port 3002) UNIONによる別テーブルの表示
-    ├── 03-or-listing/   (port 3003) 数値条件のORによる全件表示
+    ├── 02-or-listing/   (port 3002) 数値条件のORによる全件表示
+    ├── 03-union-search/ (port 3003) UNIONによる別テーブルの表示
     ├── 04-case-bypass/  (port 3004) 大文字小文字によるフィルタ回避
     ├── 05-hex-filter/   (port 3005) 16進数文字列によるフィルタ回避
     └── 06-boolean-code/ (port 3006) Boolean-blindによる1桁判定
@@ -29,25 +29,27 @@ sql-injection/
 - `admin' -- `でpassword条件をコメントアウトする。
 - adminとしてログインできた場合、通常クエリでflagを表示する。
 
-## 02-union-search
-
-- `products(id,name,description,price)`と`flags(id,flag)`。
-- `q`を`LIKE '%{q}%'`へ直接連結する。
-- テーブル名、カラム名、4カラムであることを問題文に明記する。
-- `zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -`でflagを商品名として表示する。
-
-## 03-or-listing
+## 02-or-listing
 
 - `products(id,name,description,price)`。ID 999の商品を`02-flag.sh`で追加し、説明欄へflagを置く。
 - `id`を数値条件へ直接連結し、該当する全行を表示する。
 - `0 OR 1=1`ですべての商品を表示する。
 - 専用SQL関数、エラーからの抽出、文字列分割は要求しない。
 
+## 03-union-search
+
+- `products(id,name,description,price)`と`flags(id,flag)`。
+- `q`を`LIKE '%{q}%'`へ直接連結する。
+- テーブル名、カラム名、4カラムであることを問題文に明記する。
+- `zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -`でflagを商品名として表示する。
+
 ## 04-case-bypass
 
-- 02と同じテーブルと脆弱な検索クエリを使う。
+- 03と同じテーブルと脆弱な検索クエリを使う。
 - 入力に大文字の`UNION`が含まれる場合だけ拒否する。空白、`SELECT`、コメントは拒否しない。
-- 02のpayloadにある`UNION`を小文字の`union`へ変えるだけでflagを表示できる。
+- 03のpayloadにある`UNION`を小文字の`union`へ変えるだけでflagを表示できる。
+- 目的はUNION自体の再発見でなく、「文字列ブラックリストは表記ゆれで回避できる」という
+  1点。05(hex)へつながる前提知識として位置づける。
 
 ## 05-hex-filter
 
@@ -78,5 +80,5 @@ sql-injection/
 
 - `docker compose up --build`で6問が起動する。
 - ブラウザで各画面の通常操作と攻略payloadを確認する。
-- 03は`Internal Backup`の説明欄、04は商品名欄、05は`Vault`の説明欄、
+- 02は`Internal Backup`の説明欄、04は商品名欄、05は`Vault`の説明欄、
   06はcode送信後にflagが表示される。

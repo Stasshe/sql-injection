@@ -33,7 +33,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ctf-02-union-search"
+name = "ctf-02-or-listing"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
