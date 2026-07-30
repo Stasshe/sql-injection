@@ -41,23 +41,15 @@ def index():
     return send_from_directory(app.static_folder, "index.html")
 
 
-ALLOWED_FIELDS = {"name", "description", "price"}
-
-
-# Vulnerable: the price branch inserts q directly into a numeric SQL context.
+# Vulnerable: the filter checks plain text, but MySQL also accepts hex string literals.
 @app.get("/search")
 def search():
-    field = request.args.get("field", "name")
     q = request.args.get("q", "")
 
-    if field not in ALLOWED_FIELDS:
-        return jsonify({"error": "invalid field"}), 400
+    if "vault" in q.lower():
+        return jsonify({"error": "forbidden product name"}), 400
 
-    if field == "price":
-        query = f"SELECT id, name, description FROM products WHERE price = {q}"
-    else:
-        q_escaped = q.replace("'", "''")
-        query = f"SELECT id, name, description FROM products WHERE {field} LIKE '%{q_escaped}%'"
+    query = f"SELECT id, name, description FROM products WHERE name = '{q}'"
 
     try:
         with db.cursor() as cur:

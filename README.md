@@ -25,7 +25,7 @@ docker compose up --build
 | 02 | http://localhost:3002 | UNION-based抽出 | 基礎 |
 | 03 | http://localhost:3003 | ORで全件表示 | 入門 |
 | 04 | http://localhost:3004 | 大文字小文字によるフィルタ回避 | 入門 |
-| 05 | http://localhost:3005 | 価格検索へのOR注入 | 入門 |
+| 05 | http://localhost:3005 | 文字列の16進数表現によるフィルタ回避 | 入門 |
 | 06 | http://localhost:3006 | Boolean-blindで1桁判定 | 入門 |
 
 ## 進め方
@@ -34,6 +34,12 @@ docker compose up --build
 2. `apps/NN-*/server.py`のソースを読み、クエリがどう組み立てられているか確認する。
 3. 詰まったら該当READMEのヒントを1段階ずつ開く。各問は前の問題で使った考え方を
    ほぼそのまま再利用できる。
+
+03〜05の違い:
+
+- 03は、数値条件へ`OR 1=1`を足す基本。
+- 04は、SQLキーワードの大文字小文字を変える回避。
+- 05は、文字列をUTF-8の16進数へ変える回避。
 
 ## 停止・後片付け
 

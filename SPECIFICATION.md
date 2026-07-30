@@ -14,7 +14,7 @@ sql-injection/
     ├── 02-union-search/ (port 3002) UNIONによる別テーブルの表示
     ├── 03-or-listing/   (port 3003) 数値条件のORによる全件表示
     ├── 04-case-bypass/  (port 3004) 大文字小文字によるフィルタ回避
-    ├── 05-price-filter/ (port 3005) 検索対象を選んだOR注入
+    ├── 05-hex-filter/   (port 3005) 16進数文字列によるフィルタ回避
     └── 06-boolean-code/ (port 3006) Boolean-blindによる1桁判定
 ```
 
@@ -49,13 +49,14 @@ sql-injection/
 - 入力に大文字の`UNION`が含まれる場合だけ拒否する。空白、`SELECT`、コメントは拒否しない。
 - 02のpayloadにある`UNION`を小文字の`union`へ変えるだけでflagを表示できる。
 
-## 05-price-filter
+## 05-hex-filter
 
-- `products(id,name,description,price)`。ID 999の商品を`02-flag.sh`で追加し、説明欄へflagを置く。
-- `field`は`name`、`description`、`price`のホワイトリスト。
-- 文字列検索ではシングルクォートをエスケープする。価格検索だけ`q`を数値条件へ直接連結する。
-- 画面と問題文で価格検索が怪しいと明記する。
-- `field=price`と`q=0 OR 1=1`の組み合わせですべての商品を表示する。
+- `products(id,name,description,price)`。ID 999、商品名`Vault`の行を`02-flag.sh`で追加し、
+  説明欄へflagを置く。
+- `q`を`WHERE name = '{q}'`へ直接連結する完全一致検索。
+- 入力を小文字化し、平文の`vault`を含む場合だけ拒否する。
+- `Vault`のUTF-8表現`0x5661756c74`はフィルタを通り、MySQLでは同じ文字列として比較できる。
+- `zzz' OR name=0x5661756c74#`でVault商品のflagを表示する。
 
 ## 06-boolean-code
 
@@ -77,4 +78,5 @@ sql-injection/
 
 - `docker compose up --build`で6問が起動する。
 - ブラウザで各画面の通常操作と攻略payloadを確認する。
-- 03と05は`Internal Backup`の説明欄、04は商品名欄、06はcode送信後にflagが表示される。
+- 03は`Internal Backup`の説明欄、04は商品名欄、05は`Vault`の説明欄、
+  06はcode送信後にflagが表示される。

@@ -1,7 +1,7 @@
 [project]
-name = "ctf-05-price-filter"
+name = "ctf-05-hex-filter"
 version = "0.1.0"
-description = "Beginner SQL injection challenge using a vulnerable price filter"
+description = "Beginner SQL injection challenge using a hex string filter bypass"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

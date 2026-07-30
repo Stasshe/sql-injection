@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<title>05 - Price Filter</title>
+<title>05 - Hex Filter Bypass</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; color: #222; }
-  input { padding: 8px; width: 300px; }
+  input { padding: 8px; width: 360px; }
   button { padding: 8px 16px; }
   table { border-collapse: collapse; width: 100%; margin-top: 20px; }
   th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
@@ -13,23 +13,17 @@
 </style>
 </head>
 <body>
-  <h1>商品検索</h1>
-  <p>非公開の商品を探してください。価格検索の処理が怪しいようです。</p>
-  <select id="field">
-    <option value="name">商品名</option>
-    <option value="description">説明</option>
-    <option value="price">価格</option>
-  </select>
-  <input id="q" type="text" placeholder="検索語または価格" />
+  <h1>商品名検索</h1>
+  <p>商品名を完全一致で検索します。禁止された商品名<code>Vault</code>の説明を表示してください。</p>
+  <input id="q" type="text" placeholder="商品名" />
   <button id="go">検索</button>
   <div id="output"></div>
 
   <script>
     async function runSearch() {
-      const field = document.getElementById('field').value;
       const q = document.getElementById('q').value;
       const output = document.getElementById('output');
-      const resp = await fetch('/search?field=' + encodeURIComponent(field) + '&q=' + encodeURIComponent(q));
+      const resp = await fetch('/search?q=' + encodeURIComponent(q));
       const data = await resp.json();
 
       if (data.error) {
@@ -42,14 +36,16 @@
         return;
       }
 
-      const rows = data.results.map(r =>
-        '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + r.description + '</td></tr>'
+      const rows = data.results.map(row =>
+        '<tr><td>' + row.id + '</td><td>' + row.name + '</td><td>' + row.description + '</td></tr>'
       ).join('');
       output.innerHTML = '<table><tr><th>ID</th><th>商品名</th><th>説明</th></tr>' + rows + '</table>';
     }
 
     document.getElementById('go').addEventListener('click', runSearch);
-    document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+    document.getElementById('q').addEventListener('keydown', event => {
+      if (event.key === 'Enter') runSearch();
+    });
   </script>
 </body>
 </html>
