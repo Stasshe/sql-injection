@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>03 - OR Injection</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; color: #222; }
+  input { padding: 8px; width: 250px; }
+  button { padding: 8px 16px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+</style>
+</head>
+<body>
+  <h1>商品詳細</h1>
+  <p>商品IDを指定してください。</p>
+  <input id="id" type="text" placeholder="商品ID" />
+  <button id="go">表示</button>
+  <div id="output"></div>
+
+  <script>
+    async function load() {
+      const id = document.getElementById('id').value;
+      const resp = await fetch('/product?id=' + encodeURIComponent(id));
+      const data = await resp.json();
+      const output = document.getElementById('output');
+
+      if (data.error) {
+        output.innerHTML = '<pre>' + data.error + '</pre>';
+        return;
+      }
+
+      if (!data.results || data.results.length === 0) {
+        output.innerHTML = '<p>該当なし。</p>';
+        return;
+      }
+
+      const rows = data.results.map(row =>
+        '<tr><td>' + row.name + '</td><td>' + row.description + '</td><td>' + row.price + '</td></tr>'
+      ).join('');
+      output.innerHTML = '<table><tr><th>商品名</th><th>説明</th><th>価格</th></tr>' + rows + '</table>';
+    }
+    document.getElementById('go').addEventListener('click', load);
+    document.getElementById('id').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+  </script>
+</body>
+</html>

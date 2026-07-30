@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>06 - Boolean Code</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 600px; margin: 50px auto; color: #222; }
+  section { margin-bottom: 32px; }
+  input { padding: 8px; width: 300px; }
+  button { padding: 8px 16px; }
+  .result { margin-top: 12px; font-size: 1.1rem; }
+</style>
+</head>
+<body>
+  <h1>管理者コード調査</h1>
+  <p>管理者コードは0〜9のどれかです。ユーザー検索のtrue/falseを使って調べてください。</p>
+
+  <section>
+    <h2>ユーザー検索</h2>
+    <input id="id" type="text" placeholder="ユーザーID" />
+    <button id="check">確認</button>
+    <div id="check-result" class="result"></div>
+  </section>
+
+  <section>
+    <h2>コード入力</h2>
+    <input id="code" type="text" inputmode="numeric" placeholder="0〜9" />
+    <button id="claim">flagを取得</button>
+    <div id="claim-result" class="result"></div>
+  </section>
+
+  <script>
+    async function checkUser() {
+      const id = document.getElementById('id').value;
+      const resp = await fetch('/api/user?id=' + encodeURIComponent(id));
+      const data = await resp.json();
+      document.getElementById('check-result').textContent = data.found ? 'found: true' : 'found: false';
+    }
+
+    async function claimFlag() {
+      const code = document.getElementById('code').value;
+      const resp = await fetch('/claim?code=' + encodeURIComponent(code));
+      const data = await resp.json();
+      document.getElementById('claim-result').textContent = data.flag || data.error;
+    }
+
+    document.getElementById('check').addEventListener('click', checkUser);
+    document.getElementById('claim').addEventListener('click', claimFlag);
+    document.getElementById('id').addEventListener('keydown', event => {
+      if (event.key === 'Enter') checkUser();
+    });
+    document.getElementById('code').addEventListener('keydown', event => {
+      if (event.key === 'Enter') claimFlag();
+    });
+  </script>
+</body>
+</html>

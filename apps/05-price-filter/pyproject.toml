@@ -1,0 +1,10 @@
+[project]
+name = "ctf-05-price-filter"
+version = "0.1.0"
+description = "Beginner SQL injection challenge using a vulnerable price filter"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1.3",
+    "pymysql>=1.2.0",
+]

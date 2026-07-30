@@ -61,7 +61,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       FLAG: ${FLAG_03}
     volumes:
-      - ./apps/03-error-based/db:/docker-entrypoint-initdb.d:ro
+      - ./apps/03-or-listing/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -70,7 +70,7 @@ services:
     networks: [net-03]
 
   app-03:
-    build: ./apps/03-error-based
+    build: ./apps/03-or-listing
     environment:
       DB_HOST: db-03
       DB_USER: root
@@ -89,7 +89,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       FLAG: ${FLAG_04}
     volumes:
-      - ./apps/04-filter-bypass/db:/docker-entrypoint-initdb.d:ro
+      - ./apps/04-case-bypass/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -98,7 +98,7 @@ services:
     networks: [net-04]
 
   app-04:
-    build: ./apps/04-filter-bypass
+    build: ./apps/04-case-bypass
     environment:
       DB_HOST: db-04
       DB_USER: root
@@ -117,7 +117,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       FLAG: ${FLAG_05}
     volumes:
-      - ./apps/05-multi-param/db:/docker-entrypoint-initdb.d:ro
+      - ./apps/05-price-filter/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -126,7 +126,7 @@ services:
     networks: [net-05]
 
   app-05:
-    build: ./apps/05-multi-param
+    build: ./apps/05-price-filter
     environment:
       DB_HOST: db-05
       DB_USER: root
@@ -145,7 +145,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       FLAG: ${FLAG_06}
     volumes:
-      - ./apps/06-boolean-blind/db:/docker-entrypoint-initdb.d:ro
+      - ./apps/06-boolean-code/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 5s
@@ -154,7 +154,7 @@ services:
     networks: [net-06]
 
   app-06:
-    build: ./apps/06-boolean-blind
+    build: ./apps/06-boolean-code
     environment:
       DB_HOST: db-06
       DB_USER: root

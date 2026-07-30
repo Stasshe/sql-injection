@@ -1,6 +1,6 @@
 # SQL Injection CTF
 
-SQLインジェクション入門〜中級序盤の教材。全6問、Docker + Python/Flask。ソースコードは全部公開(白箱)。
+SQLインジェクション未経験者向けの教材。全6問、Docker + Python/Flask。ソースコードは全部公開(白箱)。
 各問のヒント・解答は`apps/NN-*/README.md`にある。設計背景は[INTENT.md](./INTENT.md)、
 詳細仕様は[SPECIFICATION.md](./SPECIFICATION.md)。
 
@@ -23,16 +23,17 @@ docker compose up --build
 |---|-----|------|--------|
 | 01 | http://localhost:3001 | 認証バイパス(tautology) | 入門 |
 | 02 | http://localhost:3002 | UNION-based抽出 | 基礎 |
-| 03 | http://localhost:3003 | Error-based抽出 | 基礎〜中級序盤 |
-| 04 | http://localhost:3004 | 禁止語フィルタ回避(WAF風blacklist) | 基礎〜中級序盤 |
-| 05 | http://localhost:3005 | 複数パラメータ注入(context切替) | 中級序盤 |
-| 06 | http://localhost:3006 | Boolean-blind | 中級 |
+| 03 | http://localhost:3003 | ORで全件表示 | 入門 |
+| 04 | http://localhost:3004 | 大文字小文字によるフィルタ回避 | 入門 |
+| 05 | http://localhost:3005 | 価格検索へのOR注入 | 入門 |
+| 06 | http://localhost:3006 | Boolean-blindで1桁判定 | 入門 |
 
 ## 進め方
 
 1. まず各アプリを実際に触って正規の使い方を確認する。
 2. `apps/NN-*/server.py`のソースを読み、クエリがどう組み立てられているか確認する。
-3. 詰まったら該当READMEのヒントを1段階ずつ開く。
+3. 詰まったら該当READMEのヒントを1段階ずつ開く。各問は前の問題で使った考え方を
+   ほぼそのまま再利用できる。
 
 ## 停止・後片付け
 
